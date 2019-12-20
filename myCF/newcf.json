@@ -1,0 +1,136 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Learning new CF",
+    "Resources": {
+        "ntier": {
+            "Type": "AWS::EC2::VPC",
+            "Properties": {
+                "CidrBlock": "10.2.0.0/16",
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "myvpc"
+                    }
+                ]
+            }
+        },
+        "websubnet": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "ntier"
+                },
+                "CidrBlock": "10.2.0.0/24",
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "websubnet"
+                    }
+                ]
+            }
+        },
+        "dbsubnet": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "ntier"
+                },
+                "CidrBlock": "10.2.1.0/24",
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "dbsubnet"
+                    }
+                ]
+            }
+        },
+        "Allowssh": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Allow all ssh",
+                "VpcId": {
+                    "Ref": "ntier"
+                },
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "80",
+                        "ToPort": "80",
+                        "CidrIp": "0.0.0.0/0"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "22",
+                        "ToPort": "22",
+                        "CidrIp": "0.0.0.0/0"
+                    }
+                ],
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "Allowssh"
+                    }
+                ]
+            }
+        }
+    },
+    "webserver": {
+        "Type": "AWS::EC2::Instance",
+        "Properties": {
+            "KeyName": "newjenkin1",
+            "ImageId": "ami-08d489468314a58df",
+            "InstanceType": "t2.micro",
+            "SubnetId": [{
+                "Ref": "websubnet"
+            }]
+        },
+        "SecurityGroupIds": [
+            {
+                "Ref": "Allowssh"
+            }
+        ],
+        "Tags": [
+            {
+                "Key": "Name",
+                "Value": "webserver"
+            }
+        ],
+        "UserData": {
+            "Fn::Base64": {
+                "Fn::Join": [
+                    "#!/bin/bash -ex"
+                ]
+            }
+        }
+    },
+    "Outputs": {
+        "VpcId": {
+            "Value": {
+                "Ref": "ntier"
+            }
+        },
+        "WebId": {
+            "Value": {
+                "Ref": "websubnet"
+            }
+        },
+        "DbId": {
+            "Value": {
+                "Ref": "dbsubnet"
+            }
+        },
+        "webserverid": {
+            "Value": {
+                "Ref": "webserver"
+            }
+        },
+        "webserverip": {
+            "Value": {
+                "Fn::GetAtt": [
+                    "webserver",
+                    "PrivateIp"
+                ]
+            }
+        }
+    }
+}
